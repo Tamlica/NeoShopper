@@ -1,20 +1,26 @@
 {
   "expo": {
-    "name": "neobrutalism-shopper",
-    "slug": "neobrutalism-shopper",
+    "name": "Neo Shopper",
+    "slug": "neo-shopper",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "icon": "./assets/images/neoshopper.png",
+    "scheme": "neoshopper",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.chicakelitte.neoshopper"
     },
     "web": {
       "bundler": "metro",
       "output": "single",
       "favicon": "./assets/images/favicon.png"
+    },
+    "android": {
+      "package": "com.chicakelitte.neoshopper",
+      "versionCode": 1,
+      "icon": "./assets/images/neoshopper.png"
     },
     "plugins": ["expo-router"],
     "experiments": {
