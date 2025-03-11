@@ -45,7 +45,7 @@ Follow these steps to set up and run **NeoShopper** on your local machine.
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/your-username/NeoShopper.git
+   git clone https://github.com/tamlica/NeoShopper.git
    cd NeoShopper
    ```
 2. **Install Dependencies**:
