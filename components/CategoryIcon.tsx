@@ -1,16 +1,35 @@
-import { Apple, Beef, Carrot, Coffee, Package as Container, Cookie, Croissant, MilkOff as Milk, ShowerHead as Shower, SprayCan as Spray } from 'lucide-react-native';
+import {
+  Apple,
+  Beef,
+  Carrot,
+  Coffee,
+  Shirt,
+  Smartphone,
+  Croissant,
+  MilkOff as Milk,
+  ShowerHead as Shower,
+  SprayCan as Spray,
+  CupSoda as Soda,
+  Laptop,
+  Tablets,
+  PocketKnife,
+} from 'lucide-react-native';
 
 const iconMap = {
   Apple,
   Beef,
   Carrot,
   Coffee,
-  Container,
-  Cookie,
+  Shirt,
+  Smartphone,
   Croissant,
   Milk,
   Shower,
   Spray,
+  Soda,
+  Laptop,
+  Tablets,
+  PocketKnife,
 };
 
 interface Props {
