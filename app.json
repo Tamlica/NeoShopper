@@ -8,6 +8,11 @@
     "scheme": "neoshopper",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/neoshopper.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#DFE5F2"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.chicakelitte.neoshopper"
@@ -22,9 +27,19 @@
       "versionCode": 1,
       "icon": "./assets/images/neoshopper.png"
     },
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router"
+    ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "2b8fa558-7076-4ea4-b85d-dee8a26d55c6"
+      }
     }
   }
 }
