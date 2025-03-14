@@ -13,6 +13,7 @@ import {
   Laptop,
   Tablets,
   PocketKnife,
+  Cookie
 } from 'lucide-react-native';
 
 const iconMap = {
@@ -30,6 +31,7 @@ const iconMap = {
   Laptop,
   Tablets,
   PocketKnife,
+  Cookie
 };
 
 interface Props {
