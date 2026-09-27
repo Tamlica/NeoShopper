@@ -1,10 +1,6 @@
-import { View, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
-
-const COLORS = [
-  '#4ade80', '#fb923c', '#60a5fa', '#f87171', '#fbbf24',
-  '#a78bfa', '#fdba74', '#67e8f9', '#f472b6', '#a3e635',
-  '#FF6B6B', '#4ECDC4', '#FFE66D', '#88AAEE', '#FF8ED4',
-];
+import { Pressable, StyleSheet, ScrollView } from 'react-native';
+import { Check } from 'lucide-react-native';
+import { border, color, radius, shadow, space, swatches } from '@/constants/theme';
 
 interface Props {
   selectedColor: string;
@@ -13,46 +9,38 @@ interface Props {
 
 export function ColorPicker({ selectedColor, onSelectColor }: Props) {
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      style={styles.container}>
-      {COLORS.map((color) => (
-        <TouchableOpacity
-          key={color}
-          onPress={() => onSelectColor(color)}
-          style={[
-            styles.colorButton,
-            { backgroundColor: color },
-            selectedColor === color && styles.selectedColor,
-          ]}
-        />
-      ))}
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.container}>
+      {swatches.map((swatch) => {
+        const selected = selectedColor === swatch;
+        return (
+          <Pressable
+            key={swatch}
+            onPress={() => onSelectColor(swatch)}
+            accessibilityRole="radio"
+            accessibilityLabel={`Colour ${swatch}`}
+            accessibilityState={{ selected }}
+            style={[styles.swatch, { backgroundColor: swatch }, selected ? styles.selected : styles.raised]}>
+            {selected && <Check size={20} color={color.ink} strokeWidth={3} />}
+          </Pressable>
+        );
+      })}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 0,
-    marginBottom: 16,
+  container: { flexGrow: 0, marginBottom: space.lg, paddingBottom: space.xs },
+  swatch: {
+    width: 44,
+    height: 44,
+    marginRight: space.sm,
+    borderRadius: radius.md,
+    borderWidth: border.light,
+    borderColor: color.ink,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  colorButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    marginRight: 8,
-    borderWidth: 3,
-    borderColor: '#000000',
-    shadowColor: '#000000',
-    shadowOffset: { width: 2, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 4,
-  },
-  selectedColor: {
-    borderWidth: 3,
-    borderColor: '#000000',
-    transform: [{ scale: 1.1 }],
-  },
+  raised: { boxShadow: shadow.small },
+  // Pressed-in: drops into its shadow, heavier border, check mark.
+  selected: { borderWidth: border.heavy, transform: [{ translateX: 2 }, { translateY: 2 }] },
 });

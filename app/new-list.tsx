@@ -1,42 +1,46 @@
 import { View, Text, StyleSheet, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NeoBrutalButton } from '@/components/NeoBrutalButton';
 import { useStore } from '@/store/useStore';
+import { border, color, font, radius, shadow, space, text } from '@/constants/theme';
 
 export default function NewListScreen() {
   const [title, setTitle] = useState('');
   const router = useRouter();
   const { addList } = useStore();
+  const insets = useSafeAreaInsets();
+  const canCreate = title.trim().length > 0;
 
   const handleCreate = () => {
-    if (!title.trim()) return;
+    if (!canCreate) return;
 
-    const newList = {
+    addList({
       id: Date.now().toString(),
       title: title.trim(),
       createdAt: Date.now(),
       items: [],
-    };
-
-    addList(newList);
+    });
     router.back();
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Create New List</Text>
-      </View>
+    <View style={[styles.container, { paddingTop: insets.top + space.xl }]}>
+      <Text style={styles.title}>New list</Text>
 
       <View style={styles.form}>
-        <Text style={styles.label}>List Name</Text>
+        <Text style={styles.label}>Name</Text>
         <TextInput
           style={styles.input}
           value={title}
           onChangeText={setTitle}
-          placeholder="Enter list name..."
-          placeholderTextColor="#666666"
+          onSubmitEditing={handleCreate}
+          returnKeyType="done"
+          autoFocus
+          placeholder="Weekly groceries"
+          placeholderTextColor={color.inkMuted}
+          accessibilityLabel="List name"
         />
 
         <View style={styles.buttonContainer}>
@@ -47,9 +51,9 @@ export default function NewListScreen() {
             style={styles.button}
           />
           <NeoBrutalButton
-            title="Create List"
+            title="Create list"
             onPress={handleCreate}
-            color="#FF6B6B"
+            disabled={!canCreate}
             style={styles.button}
           />
         </View>
@@ -61,52 +65,43 @@ export default function NewListScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#DFE5F2',
-    padding: 16,
-  },
-  header: {
-    marginTop: 48,
-    marginBottom: 32,
+    backgroundColor: color.paper,
+    paddingHorizontal: space.lg,
   },
   title: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 32,
-    color: '#000000',
+    fontFamily: font.bold,
+    fontSize: text.display,
+    color: color.ink,
+    marginBottom: space.xl,
   },
   form: {
-    backgroundColor: '#88AAEE',
-    borderWidth: 3,
-    borderColor: '#000000',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000000',
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 5,
+    backgroundColor: color.surface,
+    borderWidth: border.heavy,
+    borderColor: color.ink,
+    borderRadius: radius.lg,
+    padding: space.lg,
+    boxShadow: shadow.hard,
   },
   label: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 16,
-    color: '#000000',
-    marginBottom: 8,
+    fontFamily: font.bold,
+    fontSize: text.md,
+    color: color.ink,
+    marginBottom: space.sm,
   },
   input: {
-    backgroundColor: '#F7F9FC',
-    borderWidth: 3,
-    borderColor: '#000000',
-    borderRadius: 8,
-    padding: 12,
-    fontFamily: 'SpaceGrotesk-Regular',
-    fontSize: 16,
-    color: '#000000',
-    marginBottom: 24,
+    backgroundColor: color.paper,
+    borderWidth: border.light,
+    borderColor: color.ink,
+    borderRadius: radius.md,
+    padding: space.md,
+    fontFamily: font.regular,
+    fontSize: text.md,
+    color: color.ink,
+    marginBottom: space.xl,
   },
   buttonContainer: {
     flexDirection: 'row',
-    gap: 12,
+    gap: space.md,
   },
-  button: {
-    flex: 1,
-  },
+  button: { flex: 1 },
 });

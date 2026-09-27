@@ -1,10 +1,6 @@
-import { View, TouchableOpacity, StyleSheet, ScrollView, Text } from 'react-native';
-import { CategoryIcon } from './CategoryIcon';
-
-const ICONS = [
-  'Apple', 'Beef', 'Carrot', 'Coffee', 'Container',
-  'Cookie', 'Croissant', 'Milk', 'Shower', 'Spray',
-];
+import { Pressable, StyleSheet, ScrollView } from 'react-native';
+import { CategoryIcon, iconNames } from './CategoryIcon';
+import { border, color, radius, shadow, space } from '@/constants/theme';
 
 interface Props {
   selectedIcon: string;
@@ -12,51 +8,43 @@ interface Props {
   color?: string;
 }
 
-export function IconPicker({ selectedIcon, onSelectIcon, color = '#4ade80' }: Props) {
+export function IconPicker({ selectedIcon, onSelectIcon, color: fill = color.primary }: Props) {
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      style={styles.container}>
-      {ICONS.map((icon) => (
-        <TouchableOpacity
-          key={icon}
-          onPress={() => onSelectIcon(icon)}
-          style={[
-            styles.iconButton,
-            { backgroundColor: color },
-            selectedIcon === icon && styles.selectedIcon,
-          ]}>
-          <CategoryIcon name={icon} size={24} color="#000000" />
-        </TouchableOpacity>
-      ))}
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.container}>
+      {iconNames.map((icon) => {
+        const selected = selectedIcon === icon;
+        return (
+          <Pressable
+            key={icon}
+            onPress={() => onSelectIcon(icon)}
+            accessibilityRole="radio"
+            accessibilityLabel={icon}
+            accessibilityState={{ selected }}
+            style={[
+              styles.tile,
+              selected ? [styles.selected, { backgroundColor: fill }] : styles.raised,
+            ]}>
+            <CategoryIcon name={icon} size={24} />
+          </Pressable>
+        );
+      })}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 0,
-    marginBottom: 16,
-  },
-  iconButton: {
+  container: { flexGrow: 0, marginBottom: space.lg, paddingBottom: space.xs },
+  tile: {
     width: 48,
     height: 48,
-    borderRadius: 8,
-    marginRight: 8,
-    borderWidth: 3,
-    borderColor: '#000000',
+    marginRight: space.sm,
+    borderRadius: radius.md,
+    borderWidth: border.light,
+    borderColor: color.ink,
+    backgroundColor: color.surface,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000000',
-    shadowOffset: { width: 2, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 4,
   },
-  selectedIcon: {
-    borderWidth: 3,
-    borderColor: '#000000',
-    transform: [{ scale: 1.1 }],
-  },
+  raised: { boxShadow: shadow.small },
+  selected: { borderWidth: border.heavy, transform: [{ translateX: 2 }, { translateY: 2 }] },
 });

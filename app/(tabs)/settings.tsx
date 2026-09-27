@@ -1,16 +1,48 @@
-import { View, Text, StyleSheet, ScrollView, Linking, Pressable, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Linking, Pressable, TextInput } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from '@/store/useStore';
 import { NeoBrutalButton } from '@/components/NeoBrutalButton';
 import { CategoryIcon } from '@/components/CategoryIcon';
+import { CategoryChip } from '@/components/CategoryChip';
 import { ColorPicker } from '@/components/ColorPicker';
 import { IconPicker } from '@/components/IconPicker';
+import { useUndo } from '@/components/UndoSnackbar';
 import { useState } from 'react';
-import { Plus, X } from 'lucide-react-native';
+import { Category, QuickAddItem } from '@/types/list';
+import { X } from 'lucide-react-native';
+import { border, color, font, radius, space, swatches, text } from '@/constants/theme';
+
+const blankCategory = { name: '', color: swatches[0] as string, icon: 'Apple' };
+
+const insertAt = <T,>(arr: T[], index: number, item: T) => [
+  ...arr.slice(0, index),
+  item,
+  ...arr.slice(index),
+];
 
 export default function SettingsScreen() {
-  const { categories, quickAddItems, addCategory, deleteCategory, addQuickAddItem, deleteQuickAddItem } = useStore();
-  const [newCategory, setNewCategory] = useState({ name: '', color: '#4ade80', icon: 'Apple' });
-  const [newQuickItem, setNewQuickItem] = useState({ name: '', category: categories[0].id });
+  const { categories, quickAddItems, addCategory, deleteCategory, addQuickAddItem, deleteQuickAddItem } =
+    useStore();
+  const showUndo = useUndo((s) => s.show);
+
+  const removeCategory = (category: Category) => {
+    const index = categories.indexOf(category);
+    deleteCategory(category.id);
+    showUndo(`Deleted “${category.name}”`, () =>
+      useStore.setState((s) => ({ categories: insertAt(s.categories, index, category) }))
+    );
+  };
+
+  const removeQuickItem = (item: QuickAddItem) => {
+    const index = quickAddItems.indexOf(item);
+    deleteQuickAddItem(item.id);
+    showUndo(`Deleted “${item.name}”`, () =>
+      useStore.setState((s) => ({ quickAddItems: insertAt(s.quickAddItems, index, item) }))
+    );
+  };
+  const insets = useSafeAreaInsets();
+  const [newCategory, setNewCategory] = useState(blankCategory);
+  const [newQuickItem, setNewQuickItem] = useState({ name: '', category: categories[0]?.id ?? '' });
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showAddQuickItem, setShowAddQuickItem] = useState(false);
 
@@ -21,65 +53,60 @@ export default function SettingsScreen() {
   };
 
   const handleAddCategory = () => {
-    if (newCategory.name.trim()) {
-      addCategory({
-        id: Date.now().toString(),
-        ...newCategory,
-      });
-      setNewCategory({ name: '', color: '#4ade80', icon: 'Apple' });
-      setShowAddCategory(false);
-    }
+    if (!newCategory.name.trim()) return;
+    addCategory({ id: Date.now().toString(), ...newCategory, name: newCategory.name.trim() });
+    setNewCategory(blankCategory);
+    setShowAddCategory(false);
   };
 
   const handleAddQuickItem = () => {
-    if (newQuickItem.name.trim()) {
-      addQuickAddItem({
-        id: Date.now().toString(),
-        ...newQuickItem,
-      });
-      setNewQuickItem({ name: '', category: categories[0].id });
-      setShowAddQuickItem(false);
-    }
+    if (!newQuickItem.name.trim()) return;
+    addQuickAddItem({ id: Date.now().toString(), ...newQuickItem, name: newQuickItem.name.trim() });
+    setNewQuickItem({ name: '', category: categories[0]?.id ?? '' });
+    setShowAddQuickItem(false);
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top + space.xl }]}>
       <Text style={styles.title}>Settings</Text>
 
-      <ScrollView style={styles.content}>
+      <ScrollView style={styles.content} contentContainerStyle={styles.contentInner}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Categories</Text>
           <View style={styles.categoryGrid}>
             {categories.map((category) => (
-              <View key={category.id} style={styles.categoryWrapper}>
-                <View style={[styles.categoryItem, { backgroundColor: category.color }]}>
-                  <CategoryIcon name={category.icon} size={20} color="#000000" />
-                  <Text style={styles.categoryName}>{category.name}</Text>
-                </View>
-                <TouchableOpacity
-                  onPress={() => deleteCategory(category.id)}
-                  style={styles.deleteButton}>
-                  <X size={16} color="#FF6B6B" />
-                </TouchableOpacity>
+              <View key={category.id} style={[styles.categoryTag, { backgroundColor: category.color }]}>
+                <CategoryIcon name={category.icon} size={18} />
+                <Text style={styles.categoryName}>{category.name}</Text>
+                <Pressable
+                  onPress={() => removeCategory(category)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Delete ${category.name}`}
+                  hitSlop={12}
+                  style={styles.tagDelete}>
+                  <X size={16} color={color.ink} strokeWidth={3} />
+                </Pressable>
               </View>
             ))}
           </View>
-          
+
           {showAddCategory ? (
             <View style={styles.addForm}>
               <TextInput
                 style={styles.input}
                 value={newCategory.name}
-                onChangeText={(text) => setNewCategory({ ...newCategory, name: text })}
+                onChangeText={(name) => setNewCategory({ ...newCategory, name })}
                 placeholder="Category name"
-                placeholderTextColor="#666666"
+                placeholderTextColor={color.inkMuted}
+                accessibilityLabel="Category name"
+                autoFocus
               />
-              <Text style={styles.label}>Select Color</Text>
+              <Text style={styles.label}>Colour</Text>
               <ColorPicker
                 selectedColor={newCategory.color}
-                onSelectColor={(color) => setNewCategory({ ...newCategory, color })}
+                onSelectColor={(c) => setNewCategory({ ...newCategory, color: c })}
               />
-              <Text style={styles.label}>Select Icon</Text>
+              <Text style={styles.label}>Icon</Text>
               <IconPicker
                 selectedIcon={newCategory.icon}
                 onSelectIcon={(icon) => setNewCategory({ ...newCategory, icon })}
@@ -93,38 +120,39 @@ export default function SettingsScreen() {
                   style={styles.buttonHalf}
                 />
                 <NeoBrutalButton
-                  title="Add Category"
+                  title="Add"
                   onPress={handleAddCategory}
+                  disabled={!newCategory.name.trim()}
                   style={styles.buttonHalf}
-                  color="#FF6B6B"
                 />
               </View>
             </View>
           ) : (
             <NeoBrutalButton
-              title="Add New Category"
+              title="Add category"
               onPress={() => setShowAddCategory(true)}
-              style={styles.button}
+              variant="secondary"
+              style={styles.selfStart}
             />
           )}
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Add Items</Text>
+          <Text style={styles.sectionTitle}>Quick add items</Text>
           <View style={styles.quickItemsList}>
             {quickAddItems.map((item) => {
               const category = categories.find((c) => c.id === item.category);
               return (
-                <View key={item.id} style={styles.quickItemWrapper}>
-                  <View style={styles.quickItem}>
-                    <View style={[styles.categoryDot, { backgroundColor: category?.color }]} />
-                    <Text style={styles.quickItemName}>{item.name}</Text>
-                  </View>
-                  <TouchableOpacity
-                    onPress={() => deleteQuickAddItem(item.id)}
-                    style={styles.deleteButton}>
-                    <X size={16} color="#FF6B6B" />
-                  </TouchableOpacity>
+                <View key={item.id} style={styles.quickItem}>
+                  <View style={[styles.categoryDot, { backgroundColor: category?.color }]} />
+                  <Text style={styles.quickItemName}>{item.name}</Text>
+                  <Pressable
+                    onPress={() => removeQuickItem(item)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Delete ${item.name}`}
+                    style={styles.rowDelete}>
+                    <X size={18} color={color.ink} strokeWidth={3} />
+                  </Pressable>
                 </View>
               );
             })}
@@ -135,31 +163,20 @@ export default function SettingsScreen() {
               <TextInput
                 style={styles.input}
                 value={newQuickItem.name}
-                onChangeText={(text) => setNewQuickItem({ ...newQuickItem, name: text })}
+                onChangeText={(name) => setNewQuickItem({ ...newQuickItem, name })}
                 placeholder="Item name"
-                placeholderTextColor="#666666"
+                placeholderTextColor={color.inkMuted}
+                accessibilityLabel="Item name"
+                autoFocus
               />
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.categoryScroll}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow}>
                 {categories.map((category) => (
-                  <TouchableOpacity
+                  <CategoryChip
                     key={category.id}
+                    category={category}
+                    selected={newQuickItem.category === category.id}
                     onPress={() => setNewQuickItem({ ...newQuickItem, category: category.id })}
-                    style={[
-                      styles.categoryChip,
-                      {
-                        backgroundColor: category.color,
-                        borderColor:
-                          newQuickItem.category === category.id
-                            ? '#000000'
-                            : 'transparent',
-                      },
-                    ]}>
-                    <CategoryIcon name={category.icon} size={16} color="#000000" />
-                    <Text style={styles.categoryChipText}>{category.name}</Text>
-                  </TouchableOpacity>
+                  />
                 ))}
               </ScrollView>
               <View style={styles.buttonRow}>
@@ -170,36 +187,30 @@ export default function SettingsScreen() {
                   style={styles.buttonHalf}
                 />
                 <NeoBrutalButton
-                  title="Add Quick Item"
+                  title="Add"
                   onPress={handleAddQuickItem}
+                  disabled={!newQuickItem.name.trim()}
                   style={styles.buttonHalf}
-                  color="#FF6B6B"
                 />
               </View>
             </View>
           ) : (
             <NeoBrutalButton
-              title="Add Quick Item"
+              title="Add quick item"
               onPress={() => setShowAddQuickItem(true)}
-              style={styles.button}
+              variant="secondary"
+              style={styles.selfStart}
             />
           )}
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About</Text>
-          <Text style={styles.aboutText}>
-            NeoShopper App v1.0.0
-          </Text>
-        </View>
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Support!</Text>
-          <Pressable onPress={handleSupportLink}>
+        <View style={styles.colophon}>
+          <Pressable onPress={handleSupportLink} accessibilityRole="link">
             <Text style={styles.aboutText}>
-              If you like the NeoShopper App, support me on{' '}
-              <Text style={styles.linkText}>Sociabuzz</Text>
+              Like NeoShopper? Support it on <Text style={styles.linkText}>Sociabuzz</Text>.
             </Text>
           </Pressable>
+          <Text style={styles.version}>NeoShopper v1.0.0</Text>
         </View>
       </ScrollView>
     </View>
@@ -209,152 +220,128 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#DFE5F2',
-    padding: 16,
+    backgroundColor: color.paper,
+    paddingHorizontal: space.lg,
   },
   title: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 32,
-    color: '#000000',
-    marginTop: 48,
-    marginBottom: 24,
+    fontFamily: font.bold,
+    fontSize: text.display,
+    color: color.ink,
+    marginBottom: space.xl,
   },
-  content: {
-    flex: 1,
-  },
-  section: {
-    marginBottom: 32,
-  },
+  content: { flex: 1 },
+  contentInner: { paddingBottom: space.xxl },
+  section: { marginBottom: space.xxl },
   sectionTitle: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 20,
-    color: '#000000',
-    marginBottom: 16,
+    fontFamily: font.bold,
+    fontSize: text.lg,
+    color: color.ink,
+    marginBottom: space.lg,
   },
   label: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 16,
-    color: '#000000',
-    marginBottom: 8,
+    fontFamily: font.bold,
+    fontSize: text.sm,
+    color: color.ink,
+    marginBottom: space.sm,
   },
+  selfStart: { alignSelf: 'flex-start' },
   categoryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 16,
+    gap: space.sm,
+    marginBottom: space.lg,
   },
-  categoryWrapper: {
+  categoryTag: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: space.xs + 2,
+    minHeight: 36,
+    paddingLeft: space.sm,
+    borderRadius: radius.md,
+    borderWidth: border.light,
+    borderColor: color.ink,
   },
-  categoryItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    padding: 8,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: '#000000',
-  },
-  categoryName: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 14,
-    color: '#000000',
-  },
-  deleteButton: {
-    padding: 4,
-    marginLeft: 4,
-  },
-  button: {
-    marginTop: 8,
+  categoryName: { fontFamily: font.bold, fontSize: text.sm, color: color.ink },
+  tagDelete: {
+    alignSelf: 'stretch',
+    justifyContent: 'center',
+    paddingHorizontal: space.sm,
+    borderLeftWidth: border.light,
+    borderLeftColor: color.ink,
   },
   buttonRow: {
     flexDirection: 'row',
-    gap: 8,
-    marginTop: 12,
+    gap: space.sm,
+    marginTop: space.md,
   },
-  buttonHalf: {
-    flex: 1,
-  },
+  buttonHalf: { flex: 1 },
+  // Inline form: a light-bordered surface, no second shadow layer.
   addForm: {
-    backgroundColor: '#88AAEE',
-    borderWidth: 3,
-    borderColor: '#000000',
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 12,
+    backgroundColor: color.surface,
+    borderWidth: border.light,
+    borderColor: color.ink,
+    borderRadius: radius.lg,
+    padding: space.lg,
   },
   input: {
-    backgroundColor: '#F7F9FC',
-    borderWidth: 2,
-    borderColor: '#000000',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    fontFamily: 'SpaceGrotesk-Regular',
-    fontSize: 16,
-    color: '#000000',
+    backgroundColor: color.paper,
+    borderWidth: border.light,
+    borderColor: color.ink,
+    borderRadius: radius.md,
+    padding: space.md,
+    marginBottom: space.lg,
+    fontFamily: font.regular,
+    fontSize: text.md,
+    color: color.ink,
   },
-  categoryScroll: {
-    marginBottom: 12,
-  },
-  categoryChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    marginRight: 8,
-    borderWidth: 3,
-  },
-  categoryChipText: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 14,
-    color: '#000000',
-  },
+  chipRow: { flexGrow: 0 },
   quickItemsList: {
-    marginBottom: 16,
-  },
-  quickItemWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: space.lg,
+    borderTopWidth: border.light,
+    borderTopColor: color.ink,
   },
   quickItem: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderWidth: 2,
-    borderColor: '#000000',
-    borderRadius: 8,
-    padding: 8,
+    minHeight: 48,
+    borderBottomWidth: 1,
+    borderBottomColor: color.inkMuted,
   },
   categoryDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 8,
-    borderWidth: 2,
-    borderColor: '#000000',
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    marginRight: space.md,
+    borderWidth: border.light,
+    borderColor: color.ink,
   },
   quickItemName: {
-    fontFamily: 'SpaceGrotesk-Regular',
-    fontSize: 16,
-    color: '#000000',
     flex: 1,
+    fontFamily: font.regular,
+    fontSize: text.md,
+    color: color.ink,
   },
+  rowDelete: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  colophon: { gap: space.sm },
   aboutText: {
-    fontFamily: 'SpaceGrotesk-Regular',
-    fontSize: 16,
-    color: '#666666',
+    fontFamily: font.regular,
+    fontSize: text.md,
     lineHeight: 24,
+    color: color.inkMuted,
   },
   linkText: {
-    fontFamily: 'SpaceGrotesk-Regular',
-    fontSize: 16,
-    color: '#007AFF',
+    fontFamily: font.bold,
+    color: color.ink,
     textDecorationLine: 'underline',
+  },
+  version: {
+    fontFamily: font.regular,
+    fontSize: text.sm,
+    color: color.inkMuted,
   },
 });
