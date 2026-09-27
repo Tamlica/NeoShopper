@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- NeoShopper mark · checked cart · tokens: paper #DFE5F2 · surface #F7F9FC · primary #88AAEE · ink #14182B -->
+  <rect id="bg" width="1024" height="1024" fill="#DFE5F2"/>
+  <g id="mark" transform="translate(-20 -79)" stroke="#14182B" stroke-linecap="round" stroke-linejoin="round">
+    <!-- push handle -->
+    <path d="M196 300 H282 L330 400" fill="none" stroke-width="40"/>
+    <!-- base rail -->
+    <path d="M392 772 H780" fill="none" stroke-width="36"/>
+    <!-- hard offset shadow -->
+    <path d="M356 416 H868 L808 716 H416 Z" fill="#14182B" stroke-width="36"/>
+    <!-- basket -->
+    <path d="M320 380 H832 L772 680 H380 Z" fill="#88AAEE" stroke-width="36"/>
+    <!-- check -->
+    <path d="M462 524 L540 602 L690 452" fill="none" stroke-width="60"/>
+    <!-- wheels -->
+    <circle cx="444" cy="848" r="40" fill="#F7F9FC" stroke-width="32"/>
+    <circle cx="728" cy="848" r="40" fill="#F7F9FC" stroke-width="32"/>
+  </g>
+</svg>
