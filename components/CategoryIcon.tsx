@@ -3,10 +3,11 @@ import {
   Beef,
   Carrot,
   Coffee,
+  Container,
   Shirt,
   Smartphone,
   Croissant,
-  MilkOff as Milk,
+  Milk,
   ShowerHead as Shower,
   SprayCan as Spray,
   CupSoda as Soda,
@@ -15,12 +16,14 @@ import {
   PocketKnife,
   Cookie
 } from 'lucide-react-native';
+import { color as palette } from '@/constants/theme';
 
 const iconMap = {
   Apple,
   Beef,
   Carrot,
   Coffee,
+  Container,
   Shirt,
   Smartphone,
   Croissant,
@@ -34,13 +37,16 @@ const iconMap = {
   Cookie
 };
 
+// Single source for the picker, so it can never offer an icon that renders blank.
+export const iconNames = Object.keys(iconMap);
+
 interface Props {
   name: string;
   size?: number;
   color?: string;
 }
 
-export function CategoryIcon({ name, size = 20, color = '#000000' }: Props) {
+export function CategoryIcon({ name, size = 20, color = palette.ink }: Props) {
   const IconComponent = iconMap[name as keyof typeof iconMap];
   if (!IconComponent) return null;
   return <IconComponent size={size} color={color} />;

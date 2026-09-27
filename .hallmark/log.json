@@ -1,0 +1,12 @@
+[
+  {
+    "date": "2026-09-27",
+    "scope": "app",
+    "macrostructure": "app shell (title + tool panel + ledger)",
+    "theme": "custom",
+    "theme_axes": "light / grotesk-sans / cool",
+    "vibe": "neo-brutal grocery ledger, brand-preserved",
+    "enrichment": "none",
+    "brief": "NeoShopper · redesign of all screens against design.md"
+  }
+]

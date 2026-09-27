@@ -4,6 +4,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { useFonts, SpaceGrotesk_700Bold, SpaceGrotesk_400Regular } from '@expo-google-fonts/space-grotesk';
 import { SplashScreen } from 'expo-router';
+import { UndoSnackbar } from '@/components/UndoSnackbar';
+import { color } from '@/constants/theme';
 
 export default function RootLayout() {
   useFrameworkReady();
@@ -25,9 +27,10 @@ export default function RootLayout() {
 
   return (
     <>
-      <Stack screenOptions={{ headerShown: false }}>
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: color.paper } }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
+      <UndoSnackbar />
       <StatusBar style="dark" />
     </>
   );

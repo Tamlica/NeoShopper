@@ -1,69 +1,52 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from '@/store/useStore';
 import { NeoBrutalButton } from '@/components/NeoBrutalButton';
 import { ProgressBar } from '@/components/ProgressBar';
-import { Plus, ShoppingCart } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { border, color, font, radius, shadow, space, tabular, text } from '@/constants/theme';
 
 export default function ListsScreen() {
   const { lists } = useStore();
   const router = useRouter();
-
-  const getListProgress = (listId: string) => {
-    const list = lists.find((l) => l.id === listId);
-    if (!list || list.items.length === 0) return 0;
-    const completedItems = list.items.filter((item) => item.completed).length;
-    return (completedItems / list.items.length) * 100;
-  };
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top + space.xl }]}>
       <View style={styles.header}>
-        <Text style={styles.title}>Shopping Lists</Text>
-        <NeoBrutalButton
-          onPress={() => router.push('/new-list')}
-          title="New List"
-          style={styles.newButton}
-          color="#FF6B6B"
-        />
+        <Text style={styles.title}>Shopping lists</Text>
+        <NeoBrutalButton onPress={() => router.push('/new-list')} title="New list" />
       </View>
 
-      <ScrollView style={styles.listContainer}>
+      <ScrollView style={styles.listContainer} contentContainerStyle={styles.listContent}>
         {lists.length === 0 ? (
           <View style={styles.emptyState}>
-            <View style={styles.iconContainer}>
-              <ShoppingCart size={48} color="#000000" />
-            </View>
-            <Text style={styles.emptyText}>Create your first shopping list!</Text>
-            <NeoBrutalButton
-              onPress={() => router.push('/new-list')}
-              title="Create List"
-              style={{ marginTop: 16 }}
-              color="#4ECDC4"
-            />
+            <Text style={styles.emptyTitle}>No lists yet.</Text>
+            <Text style={styles.emptyText}>
+              Start one for your next shop — tap New list above.
+            </Text>
           </View>
         ) : (
           lists.map((list) => {
-            const progress = getListProgress(list.id);
+            const total = list.items.length;
+            const done = list.items.filter((item) => item.completed).length;
+            const progress = total === 0 ? 0 : (done / total) * 100;
             return (
-              <TouchableOpacity
+              <Pressable
                 key={list.id}
-                style={styles.listItem}
+                accessibilityRole="button"
+                accessibilityLabel={`${list.title}, ${done} of ${total} done`}
+                style={({ pressed }) => [styles.card, pressed ? styles.cardPressed : styles.cardRaised]}
                 onPress={() => router.push(`/list/${list.id}`)}>
-                <Text style={styles.listTitle}>{list.title}</Text>
+                <View style={styles.cardTop}>
+                  <Text style={styles.listTitle} numberOfLines={2}>{list.title}</Text>
+                  <Text style={styles.count}>{total === 0 ? 'Empty' : `${done}/${total}`}</Text>
+                </View>
+                <ProgressBar progress={progress} />
                 <Text style={styles.listDate}>
                   {new Date(list.createdAt).toLocaleDateString()}
                 </Text>
-                <View style={styles.progressContainer}>
-                  <ProgressBar progress={progress} />
-                  <Text style={styles.progressText}>{Math.round(progress)}%</Text>
-                </View>
-                <View style={styles.itemCountBadge}>
-                  <Text style={styles.itemCount}>
-                    {list.items.length} items
-                  </Text>
-                </View>
-              </TouchableOpacity>
+              </Pressable>
             );
           })
         )}
@@ -75,101 +58,65 @@ export default function ListsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#DFE5F2',
-    padding: 16,
+    backgroundColor: color.paper,
+    paddingHorizontal: space.lg,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 48,
-    marginBottom: 24,
+    gap: space.md,
+    marginBottom: space.xl,
   },
   title: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 32,
-    color: '#000000',
+    flexShrink: 1,
+    fontFamily: font.bold,
+    fontSize: text.display,
+    color: color.ink,
   },
-  newButton: {
-    paddingHorizontal: 16,
-  },
-  listContainer: {
-    flex: 1,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 100,
-  },
-  iconContainer: {
-    backgroundColor: '#FFE66D',
-    padding: 24,
-    borderRadius: 16,
-    borderWidth: 3,
-    borderColor: '#000000',
-    shadowColor: '#000000',
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 5,
-  },
+  listContainer: { flex: 1 },
+  listContent: { paddingBottom: space.xxl, paddingRight: space.xs },
+  emptyState: { marginTop: space.xxl, gap: space.sm },
+  emptyTitle: { fontFamily: font.bold, fontSize: text.lg, color: color.ink },
   emptyText: {
-    fontFamily: 'SpaceGrotesk-Regular',
-    fontSize: 18,
-    color: '#666666',
-    marginTop: 16,
+    fontFamily: font.regular,
+    fontSize: text.md,
+    lineHeight: 24,
+    color: color.inkMuted,
   },
-  listItem: {
-    backgroundColor: '#ffffff',
-    borderWidth: 3,
-    borderColor: '#000000',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000000',
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 5,
+  card: {
+    backgroundColor: color.surface,
+    borderWidth: border.heavy,
+    borderColor: color.ink,
+    borderRadius: radius.lg,
+    padding: space.lg,
+    marginBottom: space.lg,
+    gap: space.md,
+  },
+  cardRaised: { boxShadow: shadow.hard },
+  cardPressed: { transform: [{ translateX: 4 }, { translateY: 4 }] },
+  cardTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: space.md,
   },
   listTitle: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 20,
-    color: '#000000',
-    marginBottom: 8,
+    flex: 1,
+    fontFamily: font.bold,
+    fontSize: text.lg,
+    color: color.ink,
+  },
+  count: {
+    fontFamily: font.bold,
+    fontSize: text.lg,
+    color: color.ink,
+    ...tabular,
   },
   listDate: {
-    fontFamily: 'SpaceGrotesk-Regular',
-    fontSize: 14,
-    color: '#666666',
-    marginBottom: 12,
-  },
-  progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  progressText: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 14,
-    color: '#000000',
-    minWidth: 48,
-  },
-  itemCountBadge: {
-    position: 'absolute',
-    right: -3,
-    top: -3,
-    backgroundColor: '#4ECDC4',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 3,
-    borderColor: '#000000',
-  },
-  itemCount: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 14,
-    color: '#000000',
+    fontFamily: font.regular,
+    fontSize: text.sm,
+    color: color.inkMuted,
+    ...tabular,
   },
 });

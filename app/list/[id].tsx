@@ -1,29 +1,33 @@
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from '@/store/useStore';
 import { useState } from 'react';
 import { NeoBrutalButton } from '@/components/NeoBrutalButton';
 import { CategoryIcon } from '@/components/CategoryIcon';
-import { Check, ChevronLeft, Plus, Trash2, Zap } from 'lucide-react-native';
+import { CategoryChip } from '@/components/CategoryChip';
+import { useUndo } from '@/components/UndoSnackbar';
+import { Check, ChevronLeft, Plus, Zap } from 'lucide-react-native';
+import { border, color, font, radius, shadow, space, tabular, text } from '@/constants/theme';
 
 export default function ListDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { lists, updateList, deleteList, categories, quickAddItems } = useStore();
+  const showUndo = useUndo((s) => s.show);
   const list = lists.find((l) => l.id === id);
   const [newItem, setNewItem] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState(categories[0].id);
+  const [selectedCategory, setSelectedCategory] = useState(categories[0]?.id ?? '');
   const [showQuickAdd, setShowQuickAdd] = useState(false);
+
+  const containerStyle = [styles.container, { paddingTop: insets.top + space.md }];
 
   if (!list) {
     return (
-      <View style={styles.container}>
+      <View style={containerStyle}>
         <Text style={styles.title}>List not found</Text>
-        <NeoBrutalButton
-          title="Go Back"
-          onPress={() => router.back()}
-          style={{ marginTop: 16 }}
-        />
+        <NeoBrutalButton title="Back to lists" onPress={() => router.back()} style={styles.selfStart} />
       </View>
     );
   }
@@ -31,7 +35,7 @@ export default function ListDetailScreen() {
   const addItem = (name: string, categoryId: string) => {
     if (!name.trim()) return;
 
-    const updatedList = {
+    updateList({
       ...list,
       items: [
         ...list.items,
@@ -44,179 +48,142 @@ export default function ListDetailScreen() {
           createdAt: Date.now(),
         },
       ],
-    };
-
-    updateList(updatedList);
+    });
     setNewItem('');
   };
 
   const toggleItem = (itemId: string) => {
-    const updatedList = {
+    updateList({
       ...list,
       items: list.items.map((item) =>
-        item.id === itemId
-          ? { ...item, completed: !item.completed }
-          : item
+        item.id === itemId ? { ...item, completed: !item.completed } : item
       ),
-    };
-
-    updateList(updatedList);
+    });
   };
 
   const handleDelete = () => {
+    const index = lists.findIndex((l) => l.id === list.id);
     deleteList(list.id);
+    showUndo(`Deleted “${list.title}”`, () =>
+      useStore.setState((s) => ({
+        lists: [...s.lists.slice(0, index), list, ...s.lists.slice(index)],
+      }))
+    );
     router.back();
   };
 
+  const done = list.items.filter((i) => i.completed).length;
+
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}>
-          <ChevronLeft size={24} color="#000000" />
-          <Text style={styles.backText}>Items List</Text>
-        </TouchableOpacity>
-        <NeoBrutalButton
-          title="Delete List"
-          onPress={handleDelete}
-          variant="danger"
-          style={styles.deleteButton}
-        />
+    <View style={containerStyle}>
+      <Pressable
+        onPress={() => router.back()}
+        accessibilityRole="button"
+        hitSlop={8}
+        style={styles.backButton}>
+        <ChevronLeft size={24} color={color.ink} />
+        <Text style={styles.backText}>Lists</Text>
+      </Pressable>
+
+      <View style={styles.titleRow}>
+        <Text style={styles.title}>{list.title}</Text>
+        {list.items.length > 0 && (
+          <Text style={styles.count}>{done}/{list.items.length}</Text>
+        )}
       </View>
 
-      <Text style={styles.title}>{list.title}</Text>
-
-      <View style={styles.addItemContainer}>
+      <View style={styles.addPanel}>
         <View style={styles.inputRow}>
           <TextInput
-            style={[styles.input, { flex: 1 }]}
+            style={styles.input}
             value={newItem}
             onChangeText={setNewItem}
-            placeholder="Add new item..."
-            placeholderTextColor="#666666"
+            onSubmitEditing={() => addItem(newItem, selectedCategory)}
+            returnKeyType="done"
+            placeholder="Add an item…"
+            placeholderTextColor={color.inkMuted}
+            accessibilityLabel="New item"
           />
-          <TouchableOpacity
+          <Pressable
             onPress={() => setShowQuickAdd(!showQuickAdd)}
-            style={[
-              styles.quickAddButton,
-              { backgroundColor: showQuickAdd ? '#4ECDC4' : '#FFE66D' },
-            ]}>
-            <Zap size={20} color="#000000" />
-          </TouchableOpacity>
+            accessibilityRole="button"
+            accessibilityLabel="Quick add"
+            accessibilityState={{ selected: showQuickAdd }}
+            style={[styles.quickAddToggle, showQuickAdd && styles.quickAddToggleOn]}>
+            <Zap size={20} color={color.ink} fill={showQuickAdd ? color.ink : 'none'} />
+          </Pressable>
         </View>
 
         {showQuickAdd ? (
-          <ScrollView
-            style={styles.quickAddContainer}
-            showsVerticalScrollIndicator={false}>
+          <ScrollView style={styles.quickAddList} showsVerticalScrollIndicator={false}>
             {quickAddItems.map((item) => {
               const category = categories.find((c) => c.id === item.category);
               return (
-                <TouchableOpacity
+                <Pressable
                   key={item.id}
-                  style={styles.quickAddItem}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Add ${item.name}`}
+                  style={({ pressed }) => [styles.quickAddRow, pressed && styles.rowPressed]}
                   onPress={() => addItem(item.name, item.category)}>
-                  <View style={styles.quickAddContent}>
-                    <View
-                      style={[
-                        styles.categoryIcon,
-                        { backgroundColor: category?.color },
-                      ]}>
-                      <CategoryIcon
-                        name={category?.icon || ''}
-                        size={16}
-                        color="#000000"
-                      />
-                    </View>
-                    <Text style={styles.quickAddText}>{item.name}</Text>
+                  <View style={[styles.categorySquare, { backgroundColor: category?.color }]}>
+                    <CategoryIcon name={category?.icon ?? ''} size={16} />
                   </View>
-                  <Plus size={16} color="#000000" />
-                </TouchableOpacity>
+                  <Text style={styles.quickAddText}>{item.name}</Text>
+                  <Plus size={18} color={color.ink} />
+                </Pressable>
               );
             })}
           </ScrollView>
         ) : (
           <>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.categoryScroll}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow}>
               {categories.map((category) => (
-                <TouchableOpacity
+                <CategoryChip
                   key={category.id}
+                  category={category}
+                  selected={selectedCategory === category.id}
                   onPress={() => setSelectedCategory(category.id)}
-                  style={[
-                    styles.categoryChip,
-                    {
-                      backgroundColor: category.color,
-                      borderColor:
-                        selectedCategory === category.id
-                          ? '#000000'
-                          : 'transparent',
-                    },
-                  ]}>
-                  <CategoryIcon
-                    name={category.icon}
-                    size={16}
-                    color="#000000"
-                  />
-                  <Text style={styles.categoryText}>{category.name}</Text>
-                </TouchableOpacity>
+                />
               ))}
             </ScrollView>
             <NeoBrutalButton
-              title="Add Item"
+              title="Add item"
               onPress={() => addItem(newItem, selectedCategory)}
-              style={styles.addButton}
+              disabled={!newItem.trim()}
             />
           </>
         )}
       </View>
 
-      <ScrollView style={styles.itemList}>
+      <ScrollView style={styles.itemList} contentContainerStyle={styles.itemListContent}>
         {list.items.map((item) => {
           const category = categories.find((c) => c.id === item.category);
           return (
-            <TouchableOpacity
+            <Pressable
               key={item.id}
               onPress={() => toggleItem(item.id)}
-              style={[
-                styles.itemCard,
-                item.completed && styles.completedItem,
-              ]}>
-              <View style={styles.itemContent}>
-                <View
-                  style={[
-                    styles.categoryIcon,
-                    { backgroundColor: category?.color },
-                  ]}>
-                  <CategoryIcon
-                    name={category?.icon || ''}
-                    size={16}
-                    color="#000000"
-                  />
-                </View>
-                <Text
-                  style={[
-                    styles.itemText,
-                    item.completed && styles.completedText,
-                  ]}>
-                  {item.name}
-                </Text>
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: item.completed }}
+              style={[styles.itemRow, item.completed && styles.itemRowDone]}>
+              <View style={[styles.categorySquare, { backgroundColor: category?.color }]}>
+                <CategoryIcon name={category?.icon ?? ''} size={16} />
               </View>
-              <View
-                style={[
-                  styles.checkbox,
-                  item.completed && styles.checkedBox,
-                ]}>
-                {item.completed && (
-                  <Check size={16} color="#000000" />
-                )}
+              <Text style={[styles.itemText, item.completed && styles.itemTextDone]}>
+                {item.name}
+              </Text>
+              <View style={[styles.checkbox, item.completed && styles.checkboxOn]}>
+                {item.completed && <Check size={16} color={color.ink} strokeWidth={3} />}
               </View>
-            </TouchableOpacity>
+            </Pressable>
           );
         })}
+
+        <NeoBrutalButton
+          title="Delete list"
+          onPress={handleDelete}
+          variant="danger"
+          style={styles.deleteButton}
+        />
       </ScrollView>
     </View>
   );
@@ -225,175 +192,142 @@ export default function ListDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#DFE5F2',
-    padding: 16,
+    backgroundColor: color.paper,
+    paddingHorizontal: space.lg,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 48,
-    marginBottom: 16,
-  },
+  selfStart: { alignSelf: 'flex-start', marginTop: space.lg },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'flex-start',
+    minHeight: 44,
+    marginLeft: -space.xs,
   },
   backText: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 16,
-    color: '#000000',
-    marginLeft: 4,
+    fontFamily: font.bold,
+    fontSize: text.md,
+    color: color.ink,
+    marginLeft: space.xs,
   },
-  deleteButton: {
-    paddingHorizontal: 16,
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    gap: space.md,
+    marginTop: space.sm,
+    marginBottom: space.xl,
   },
   title: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 32,
-    color: '#000000',
-    marginBottom: 24,
+    flexShrink: 1,
+    fontFamily: font.bold,
+    fontSize: text.display,
+    color: color.ink,
   },
-  addItemContainer: {
-    backgroundColor: '#ffffff',
-    borderWidth: 3,
-    borderColor: '#000000',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-    shadowColor: '#000000',
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 5,
+  count: {
+    fontFamily: font.bold,
+    fontSize: text.lg,
+    color: color.inkMuted,
+    ...tabular,
+  },
+  addPanel: {
+    backgroundColor: color.surface,
+    borderWidth: border.heavy,
+    borderColor: color.ink,
+    borderRadius: radius.lg,
+    padding: space.lg,
+    marginBottom: space.xl,
+    boxShadow: shadow.hard,
   },
   inputRow: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 12,
+    gap: space.sm,
+    marginBottom: space.md,
   },
   input: {
-    backgroundColor: '#F7F9FC',
-    borderWidth: 3,
-    borderColor: '#000000',
-    borderRadius: 8,
-    padding: 12,
-    fontFamily: 'SpaceGrotesk-Regular',
-    fontSize: 16,
-    color: '#000000',
+    flex: 1,
+    backgroundColor: color.paper,
+    borderWidth: border.light,
+    borderColor: color.ink,
+    borderRadius: radius.md,
+    padding: space.md,
+    fontFamily: font.regular,
+    fontSize: text.md,
+    color: color.ink,
   },
-  quickAddButton: {
+  quickAddToggle: {
     width: 48,
     aspectRatio: 1,
-    borderWidth: 3,
-    borderColor: '#000000',
-    borderRadius: 8,
+    borderWidth: border.light,
+    borderColor: color.ink,
+    borderRadius: radius.md,
+    backgroundColor: color.surface,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000000',
-    shadowOffset: { width: 2, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
   },
-  quickAddContainer: {
-    maxHeight: 200,
-    marginTop: 8,
-  },
-  quickAddItem: {
+  quickAddToggleOn: { backgroundColor: color.highlight, borderWidth: border.heavy },
+  quickAddList: { maxHeight: 220 },
+  // Flat rows with a hairline — no boxes inside the panel.
+  quickAddRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#F7F9FC',
-    borderWidth: 2,
-    borderColor: '#000000',
-    borderRadius: 8,
-    padding: 8,
-    marginBottom: 8,
+    gap: space.md,
+    minHeight: 44,
+    borderBottomWidth: 1,
+    borderBottomColor: color.inkMuted,
   },
-  quickAddContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
+  rowPressed: { backgroundColor: color.paper },
   quickAddText: {
-    fontFamily: 'SpaceGrotesk-Regular',
-    fontSize: 14,
-    color: '#000000',
+    flex: 1,
+    fontFamily: font.regular,
+    fontSize: text.md,
+    color: color.ink,
   },
-  categoryScroll: {
-    marginBottom: 12,
-  },
-  categoryChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    marginRight: 8,
-    borderWidth: 3,
-  },
-  categoryIcon: {
+  chipRow: { marginBottom: space.md, flexGrow: 0 },
+  categorySquare: {
     width: 28,
     height: 28,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: '#000000',
+    borderRadius: radius.sm,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  categoryText: {
-    fontFamily: 'SpaceGrotesk-Bold',
-    fontSize: 14,
-    color: '#000000',
-  },
-  addButton: {
-    marginTop: 8,
-  },
-  itemList: {
-    flex: 1,
-  },
-  itemCard: {
-    backgroundColor: '#ffffff',
-    borderWidth: 3,
-    borderColor: '#000000',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
+  itemList: { flex: 1 },
+  itemListContent: { paddingBottom: space.xxl },
+  itemRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: space.md,
+    minHeight: 56,
+    backgroundColor: color.surface,
+    borderWidth: border.light,
+    borderColor: color.ink,
+    borderRadius: radius.md,
+    paddingHorizontal: space.md,
+    marginBottom: space.sm,
   },
-  completedItem: {
-    backgroundColor: '#F0F0F0',
+  itemRowDone: {
+    backgroundColor: color.paper,
     borderStyle: 'dashed',
-  },
-  itemContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
+    borderColor: color.inkMuted,
   },
   itemText: {
-    fontFamily: 'SpaceGrotesk-Regular',
-    fontSize: 16,
-    color: '#000000',
     flex: 1,
+    fontFamily: font.regular,
+    fontSize: text.md,
+    color: color.ink,
   },
-  completedText: {
+  itemTextDone: {
     textDecorationLine: 'line-through',
-    color: '#666666',
+    color: color.inkMuted,
   },
   checkbox: {
-    width: 24,
-    height: 24,
-    borderWidth: 3,
-    borderColor: '#000000',
-    borderRadius: 4,
+    width: 28,
+    height: 28,
+    borderWidth: border.heavy,
+    borderColor: color.ink,
+    borderRadius: radius.sm,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  checkedBox: {
-    backgroundColor: '#4ECDC4',
-  },
+  checkboxOn: { backgroundColor: color.done },
+  deleteButton: { alignSelf: 'flex-start', marginTop: space.xl },
 });

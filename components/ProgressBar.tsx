@@ -1,36 +1,30 @@
 import { View, StyleSheet } from 'react-native';
+import { border, color, radius } from '@/constants/theme';
 
 interface Props {
   progress: number;
-  color?: string;
 }
 
-export function ProgressBar({ progress, color = '#4ECDC4' }: Props) {
+export function ProgressBar({ progress }: Props) {
+  const value = Math.min(Math.max(progress, 0), 100);
   return (
-    <View style={styles.container}>
-      <View
-        style={[
-          styles.progress,
-          {
-            backgroundColor: color,
-            width: `${Math.min(Math.max(progress, 0), 100)}%`,
-          },
-        ]}
-      />
+    <View
+      style={styles.track}
+      accessibilityRole="progressbar"
+      accessibilityValue={{ min: 0, max: 100, now: Math.round(value) }}>
+      <View style={[styles.fill, { width: `${value}%` }]} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    height: 12,
-    backgroundColor: '#ffffff',
-    borderWidth: 3,
-    borderColor: '#000000',
-    borderRadius: 6,
+  track: {
+    height: 16,
+    backgroundColor: color.surface,
+    borderWidth: border.light,
+    borderColor: color.ink,
+    borderRadius: radius.sm,
     overflow: 'hidden',
   },
-  progress: {
-    height: '100%',
-  },
+  fill: { height: '100%', backgroundColor: color.done },
 });

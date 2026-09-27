@@ -40,7 +40,7 @@ const defaultQuickAddItems: QuickAddItem[] = [
   { id: '7', name: 'Perfume', category: '9' },
   { id: '8', name: 'Chips', category: '5' },
   { id: '9', name: 'Soap', category: '9' },
-  { id: '10', name: 'Rice', category: '10' },
+  { id: '10', name: 'Rice', category: '11' },
 ];
 
 export const useStore = create<StoreState>()(
@@ -79,6 +79,17 @@ export const useStore = create<StoreState>()(
     {
       name: 'shopping-list-storage',
       storage: createJSONStorage(() => AsyncStorage),
+      version: 1,
+      // v0 shipped the default Rice quick item under Clothes; move it to Others.
+      migrate: (persisted, version) => {
+        const state = persisted as StoreState;
+        if (version === 0) {
+          state.quickAddItems = state.quickAddItems?.map((i) =>
+            i.id === '10' && i.name === 'Rice' && i.category === '10' ? { ...i, category: '11' } : i
+          );
+        }
+        return state;
+      },
     }
   )
 );
