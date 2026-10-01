@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { create } from 'zustand';
 import { border, color, font, radius, space, text } from '@/constants/theme';
 import { TAB_BAR_HEIGHT } from './TabBar';
+import { useT } from '@/constants/i18n';
 
 interface UndoState {
   message: string | null;
@@ -24,6 +25,7 @@ export const useUndo = create<UndoState>((set) => ({
 export function UndoSnackbar() {
   const { message, undo, clear } = useUndo();
   const insets = useSafeAreaInsets();
+  const t = useT();
 
   useEffect(() => {
     if (!message) return;
@@ -46,7 +48,7 @@ export function UndoSnackbar() {
         accessibilityRole="button"
         hitSlop={8}
         style={styles.action}>
-        <Text style={styles.actionText}>Undo</Text>
+        <Text style={styles.actionText}>{t.undo}</Text>
       </Pressable>
     </View>
   );

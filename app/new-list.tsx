@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NeoBrutalButton } from '@/components/NeoBrutalButton';
 import { useStore } from '@/store/useStore';
+import { useT } from '@/constants/i18n';
 import { border, color, font, radius, shadow, space, text } from '@/constants/theme';
 
 export default function NewListScreen() {
@@ -11,6 +12,7 @@ export default function NewListScreen() {
   const router = useRouter();
   const { addList } = useStore();
   const insets = useSafeAreaInsets();
+  const t = useT();
   const canCreate = title.trim().length > 0;
 
   const handleCreate = () => {
@@ -27,10 +29,10 @@ export default function NewListScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + space.xl }]}>
-      <Text style={styles.title}>New list</Text>
+      <Text style={styles.title}>{t.newList}</Text>
 
       <View style={styles.form}>
-        <Text style={styles.label}>Name</Text>
+        <Text style={styles.label}>{t.name}</Text>
         <TextInput
           style={styles.input}
           value={title}
@@ -38,20 +40,20 @@ export default function NewListScreen() {
           onSubmitEditing={handleCreate}
           returnKeyType="done"
           autoFocus
-          placeholder="Weekly groceries"
+          placeholder={t.listNamePlaceholder}
           placeholderTextColor={color.inkMuted}
-          accessibilityLabel="List name"
+          accessibilityLabel={t.listName}
         />
 
         <View style={styles.buttonContainer}>
           <NeoBrutalButton
-            title="Cancel"
+            title={t.cancel}
             onPress={() => router.back()}
             variant="secondary"
             style={styles.button}
           />
           <NeoBrutalButton
-            title="Create list"
+            title={t.createList}
             onPress={handleCreate}
             disabled={!canCreate}
             style={styles.button}

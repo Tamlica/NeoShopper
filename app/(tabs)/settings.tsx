@@ -10,6 +10,7 @@ import { useUndo } from '@/components/UndoSnackbar';
 import { useState } from 'react';
 import { Category, QuickAddItem } from '@/types/list';
 import { X } from 'lucide-react-native';
+import { useT, languageNames, Lang } from '@/constants/i18n';
 import { border, color, font, radius, space, swatches, text } from '@/constants/theme';
 
 const blankCategory = { name: '', color: swatches[0] as string, icon: 'Apple' };
@@ -21,14 +22,23 @@ const insertAt = <T,>(arr: T[], index: number, item: T) => [
 ];
 
 export default function SettingsScreen() {
-  const { categories, quickAddItems, addCategory, deleteCategory, addQuickAddItem, deleteQuickAddItem } =
-    useStore();
+  const {
+    categories,
+    quickAddItems,
+    language,
+    setLanguage,
+    addCategory,
+    deleteCategory,
+    addQuickAddItem,
+    deleteQuickAddItem,
+  } = useStore();
+  const t = useT();
   const showUndo = useUndo((s) => s.show);
 
   const removeCategory = (category: Category) => {
     const index = categories.indexOf(category);
     deleteCategory(category.id);
-    showUndo(`Deleted “${category.name}”`, () =>
+    showUndo(t.deleted(category.name), () =>
       useStore.setState((s) => ({ categories: insertAt(s.categories, index, category) }))
     );
   };
@@ -36,7 +46,7 @@ export default function SettingsScreen() {
   const removeQuickItem = (item: QuickAddItem) => {
     const index = quickAddItems.indexOf(item);
     deleteQuickAddItem(item.id);
-    showUndo(`Deleted “${item.name}”`, () =>
+    showUndo(t.deleted(item.name), () =>
       useStore.setState((s) => ({ quickAddItems: insertAt(s.quickAddItems, index, item) }))
     );
   };
@@ -68,11 +78,11 @@ export default function SettingsScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + space.xl }]}>
-      <Text style={styles.title}>Settings</Text>
+      <Text style={styles.title}>{t.settings}</Text>
 
       <ScrollView style={styles.content} contentContainerStyle={styles.contentInner}>
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Categories</Text>
+          <Text style={styles.sectionTitle}>{t.categories}</Text>
           <View style={styles.categoryGrid}>
             {categories.map((category) => (
               <View key={category.id} style={[styles.categoryTag, { backgroundColor: category.color }]}>
@@ -81,7 +91,7 @@ export default function SettingsScreen() {
                 <Pressable
                   onPress={() => removeCategory(category)}
                   accessibilityRole="button"
-                  accessibilityLabel={`Delete ${category.name}`}
+                  accessibilityLabel={t.deleteNamed(category.name)}
                   hitSlop={12}
                   style={styles.tagDelete}>
                   <X size={16} color={color.ink} strokeWidth={3} />
@@ -96,17 +106,17 @@ export default function SettingsScreen() {
                 style={styles.input}
                 value={newCategory.name}
                 onChangeText={(name) => setNewCategory({ ...newCategory, name })}
-                placeholder="Category name"
+                placeholder={t.categoryName}
                 placeholderTextColor={color.inkMuted}
-                accessibilityLabel="Category name"
+                accessibilityLabel={t.categoryName}
                 autoFocus
               />
-              <Text style={styles.label}>Colour</Text>
+              <Text style={styles.label}>{t.colour}</Text>
               <ColorPicker
                 selectedColor={newCategory.color}
                 onSelectColor={(c) => setNewCategory({ ...newCategory, color: c })}
               />
-              <Text style={styles.label}>Icon</Text>
+              <Text style={styles.label}>{t.icon}</Text>
               <IconPicker
                 selectedIcon={newCategory.icon}
                 onSelectIcon={(icon) => setNewCategory({ ...newCategory, icon })}
@@ -114,13 +124,13 @@ export default function SettingsScreen() {
               />
               <View style={styles.buttonRow}>
                 <NeoBrutalButton
-                  title="Cancel"
+                  title={t.cancel}
                   onPress={() => setShowAddCategory(false)}
                   variant="secondary"
                   style={styles.buttonHalf}
                 />
                 <NeoBrutalButton
-                  title="Add"
+                  title={t.add}
                   onPress={handleAddCategory}
                   disabled={!newCategory.name.trim()}
                   style={styles.buttonHalf}
@@ -129,7 +139,7 @@ export default function SettingsScreen() {
             </View>
           ) : (
             <NeoBrutalButton
-              title="Add category"
+              title={t.addCategory}
               onPress={() => setShowAddCategory(true)}
               variant="secondary"
               style={styles.selfStart}
@@ -138,7 +148,7 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick add items</Text>
+          <Text style={styles.sectionTitle}>{t.quickAddItems}</Text>
           <View style={styles.quickItemsList}>
             {quickAddItems.map((item) => {
               const category = categories.find((c) => c.id === item.category);
@@ -149,7 +159,7 @@ export default function SettingsScreen() {
                   <Pressable
                     onPress={() => removeQuickItem(item)}
                     accessibilityRole="button"
-                    accessibilityLabel={`Delete ${item.name}`}
+                    accessibilityLabel={t.deleteNamed(item.name)}
                     style={styles.rowDelete}>
                     <X size={18} color={color.ink} strokeWidth={3} />
                   </Pressable>
@@ -164,9 +174,9 @@ export default function SettingsScreen() {
                 style={styles.input}
                 value={newQuickItem.name}
                 onChangeText={(name) => setNewQuickItem({ ...newQuickItem, name })}
-                placeholder="Item name"
+                placeholder={t.itemName}
                 placeholderTextColor={color.inkMuted}
-                accessibilityLabel="Item name"
+                accessibilityLabel={t.itemName}
                 autoFocus
               />
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow}>
@@ -181,13 +191,13 @@ export default function SettingsScreen() {
               </ScrollView>
               <View style={styles.buttonRow}>
                 <NeoBrutalButton
-                  title="Cancel"
+                  title={t.cancel}
                   onPress={() => setShowAddQuickItem(false)}
                   variant="secondary"
                   style={styles.buttonHalf}
                 />
                 <NeoBrutalButton
-                  title="Add"
+                  title={t.add}
                   onPress={handleAddQuickItem}
                   disabled={!newQuickItem.name.trim()}
                   style={styles.buttonHalf}
@@ -196,7 +206,7 @@ export default function SettingsScreen() {
             </View>
           ) : (
             <NeoBrutalButton
-              title="Add quick item"
+              title={t.addQuickItem}
               onPress={() => setShowAddQuickItem(true)}
               variant="secondary"
               style={styles.selfStart}
@@ -204,10 +214,25 @@ export default function SettingsScreen() {
           )}
         </View>
 
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t.language}</Text>
+          <View style={styles.buttonRow}>
+            {(Object.keys(languageNames) as Lang[]).map((lang) => (
+              <NeoBrutalButton
+                key={lang}
+                title={languageNames[lang]}
+                onPress={() => setLanguage(lang)}
+                variant={language === lang ? 'primary' : 'secondary'}
+                style={styles.buttonHalf}
+              />
+            ))}
+          </View>
+        </View>
+
         <View style={styles.colophon}>
           <Pressable onPress={handleSupportLink} accessibilityRole="link">
             <Text style={styles.aboutText}>
-              Like NeoShopper? Support it on <Text style={styles.linkText}>Sociabuzz</Text>.
+              {t.supportPrefix}<Text style={styles.linkText}>Sociabuzz</Text>.
             </Text>
           </Pressable>
           <Text style={styles.version}>NeoShopper v1.0.0</Text>

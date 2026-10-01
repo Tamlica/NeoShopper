@@ -1,17 +1,19 @@
 import { Stack, useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { NeoBrutalButton } from '@/components/NeoBrutalButton';
+import { useT } from '@/constants/i18n';
 import { color, font, space, text } from '@/constants/theme';
 
 export default function NotFoundScreen() {
   const router = useRouter();
+  const t = useT();
   return (
     <>
-      <Stack.Screen options={{ title: 'Not found' }} />
+      <Stack.Screen options={{ title: t.notFound }} />
       <View style={styles.container}>
-        <Text style={styles.title}>Nothing here.</Text>
-        <Text style={styles.body}>This screen doesn’t exist.</Text>
-        <NeoBrutalButton title="Back to lists" onPress={() => router.replace('/')} style={styles.button} />
+        <Text style={styles.title}>{t.nothingHere}</Text>
+        <Text style={styles.body}>{t.screenMissing}</Text>
+        <NeoBrutalButton title={t.backToLists} onPress={() => router.replace('/')} style={styles.button} />
       </View>
     </>
   );
