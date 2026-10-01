@@ -7,6 +7,7 @@ import { NeoBrutalButton } from '@/components/NeoBrutalButton';
 import { CategoryIcon } from '@/components/CategoryIcon';
 import { CategoryChip } from '@/components/CategoryChip';
 import { useUndo } from '@/components/UndoSnackbar';
+import { useT } from '@/constants/i18n';
 import { Check, ChevronLeft, Plus, Zap } from 'lucide-react-native';
 import { border, color, font, radius, shadow, space, tabular, text } from '@/constants/theme';
 
@@ -14,6 +15,7 @@ export default function ListDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const t = useT();
   const { lists, updateList, deleteList, categories, quickAddItems } = useStore();
   const showUndo = useUndo((s) => s.show);
   const list = lists.find((l) => l.id === id);
@@ -26,8 +28,8 @@ export default function ListDetailScreen() {
   if (!list) {
     return (
       <View style={containerStyle}>
-        <Text style={styles.title}>List not found</Text>
-        <NeoBrutalButton title="Back to lists" onPress={() => router.back()} style={styles.selfStart} />
+        <Text style={styles.title}>{t.listNotFound}</Text>
+        <NeoBrutalButton title={t.backToLists} onPress={() => router.back()} style={styles.selfStart} />
       </View>
     );
   }
@@ -64,7 +66,7 @@ export default function ListDetailScreen() {
   const handleDelete = () => {
     const index = lists.findIndex((l) => l.id === list.id);
     deleteList(list.id);
-    showUndo(`Deleted “${list.title}”`, () =>
+    showUndo(t.deleted(list.title), () =>
       useStore.setState((s) => ({
         lists: [...s.lists.slice(0, index), list, ...s.lists.slice(index)],
       }))
@@ -82,7 +84,7 @@ export default function ListDetailScreen() {
         hitSlop={8}
         style={styles.backButton}>
         <ChevronLeft size={24} color={color.ink} />
-        <Text style={styles.backText}>Lists</Text>
+        <Text style={styles.backText}>{t.tabLists}</Text>
       </Pressable>
 
       <View style={styles.titleRow}>
@@ -100,14 +102,14 @@ export default function ListDetailScreen() {
             onChangeText={setNewItem}
             onSubmitEditing={() => addItem(newItem, selectedCategory)}
             returnKeyType="done"
-            placeholder="Add an item…"
+            placeholder={t.addItemPlaceholder}
             placeholderTextColor={color.inkMuted}
-            accessibilityLabel="New item"
+            accessibilityLabel={t.newItem}
           />
           <Pressable
             onPress={() => setShowQuickAdd(!showQuickAdd)}
             accessibilityRole="button"
-            accessibilityLabel="Quick add"
+            accessibilityLabel={t.quickAdd}
             accessibilityState={{ selected: showQuickAdd }}
             style={[styles.quickAddToggle, showQuickAdd && styles.quickAddToggleOn]}>
             <Zap size={20} color={color.ink} fill={showQuickAdd ? color.ink : 'none'} />
@@ -122,7 +124,7 @@ export default function ListDetailScreen() {
                 <Pressable
                   key={item.id}
                   accessibilityRole="button"
-                  accessibilityLabel={`Add ${item.name}`}
+                  accessibilityLabel={t.addNamed(item.name)}
                   style={({ pressed }) => [styles.quickAddRow, pressed && styles.rowPressed]}
                   onPress={() => addItem(item.name, item.category)}>
                   <View style={[styles.categorySquare, { backgroundColor: category?.color }]}>
@@ -147,7 +149,7 @@ export default function ListDetailScreen() {
               ))}
             </ScrollView>
             <NeoBrutalButton
-              title="Add item"
+              title={t.addItem}
               onPress={() => addItem(newItem, selectedCategory)}
               disabled={!newItem.trim()}
             />
@@ -179,7 +181,7 @@ export default function ListDetailScreen() {
         })}
 
         <NeoBrutalButton
-          title="Delete list"
+          title={t.deleteList}
           onPress={handleDelete}
           variant="danger"
           style={styles.deleteButton}

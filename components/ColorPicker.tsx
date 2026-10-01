@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, ScrollView } from 'react-native';
 import { Check } from 'lucide-react-native';
 import { border, color, radius, shadow, space, swatches } from '@/constants/theme';
+import { useT } from '@/constants/i18n';
 
 interface Props {
   selectedColor: string;
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export function ColorPicker({ selectedColor, onSelectColor }: Props) {
+  const t = useT();
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.container}>
       {swatches.map((swatch) => {
@@ -17,7 +19,7 @@ export function ColorPicker({ selectedColor, onSelectColor }: Props) {
             key={swatch}
             onPress={() => onSelectColor(swatch)}
             accessibilityRole="radio"
-            accessibilityLabel={`Colour ${swatch}`}
+            accessibilityLabel={t.colourNamed(swatch)}
             accessibilityState={{ selected }}
             style={[styles.swatch, { backgroundColor: swatch }, selected ? styles.selected : styles.raised]}>
             {selected && <Check size={20} color={color.ink} strokeWidth={3} />}

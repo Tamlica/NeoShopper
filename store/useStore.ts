@@ -2,11 +2,14 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ShoppingList, Category, QuickAddItem } from '@/types/list';
+import type { Lang } from '@/constants/i18n';
 
 interface StoreState {
   lists: ShoppingList[];
   categories: Category[];
   quickAddItems: QuickAddItem[];
+  language: Lang | null; // null until chosen on first launch
+  setLanguage: (language: Lang) => void;
   addList: (list: ShoppingList) => void;
   updateList: (list: ShoppingList) => void;
   deleteList: (id: string) => void;
@@ -43,12 +46,45 @@ const defaultQuickAddItems: QuickAddItem[] = [
   { id: '10', name: 'Rice', category: '11' },
 ];
 
+// Indonesian names for the defaults above, keyed by id.
+const idNames = {
+  categories: {
+    '1': 'Sayuran', '2': 'Buah', '3': 'Produk Susu', '4': 'Daging', '5': 'Camilan',
+    '6': 'Minuman', '7': 'Roti & Kue', '8': 'Kebersihan', '9': 'Perawatan Diri',
+    '10': 'Pakaian', '11': 'Lainnya',
+  } as Record<string, string>,
+  quickAddItems: {
+    '1': 'Susu', '2': 'Roti', '3': 'Sampo', '4': 'Pisang', '5': 'Deterjen',
+    '6': 'Soda', '7': 'Parfum', '8': 'Keripik', '9': 'Sabun', '10': 'Beras',
+  } as Record<string, string>,
+};
+
+// Swap a default's name to the chosen language, unless the user renamed it.
+const localize = <T extends { id: string; name: string }>(
+  items: T[],
+  defaults: T[],
+  ids: Record<string, string>,
+  language: Lang
+) =>
+  items.map((item) => {
+    const en = defaults.find((d) => d.id === item.id)?.name;
+    if (!en || (item.name !== en && item.name !== ids[item.id])) return item;
+    return { ...item, name: language === 'id' ? ids[item.id] : en };
+  });
+
 export const useStore = create<StoreState>()(
   persist(
     (set) => ({
       lists: [],
       categories: defaultCategories,
       quickAddItems: defaultQuickAddItems,
+      language: null,
+      setLanguage: (language) =>
+        set((state) => ({
+          language,
+          categories: localize(state.categories, defaultCategories, idNames.categories, language),
+          quickAddItems: localize(state.quickAddItems, defaultQuickAddItems, idNames.quickAddItems, language),
+        })),
       addList: (list) =>
         set((state) => ({ lists: [...state.lists, list] })),
       updateList: (list) =>
